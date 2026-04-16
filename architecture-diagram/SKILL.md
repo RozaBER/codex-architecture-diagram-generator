@@ -1,15 +1,23 @@
 ---
 name: architecture-diagram
-description: Create professional, dark-themed architecture diagrams as standalone HTML files with SVG graphics. Use when the user asks for system architecture diagrams, infrastructure diagrams, cloud architecture visualizations, security diagrams, network topology diagrams, or any technical diagram showing system components and their relationships.
+description: Generate professional, dark-themed architecture diagrams as standalone HTML files with inline SVG. Use when the user asks for system architecture diagrams, infrastructure diagrams, cloud architecture visualizations, security diagrams, network topology diagrams, or technical diagrams showing components and relationships.
 license: MIT
 metadata:
-  version: "1.0"
-  author: Cocoon AI (hello@cocoon-ai.com)
+  version: "2.0"
+  author: Cocoon AI (adapted for Codex)
 ---
 
-# Architecture Diagram Skill
+# Architecture Diagram Skill (Codex Edition)
 
-Create professional technical architecture diagrams as self-contained HTML files with inline SVG graphics and CSS styling.
+Generate professional technical architecture diagrams as self-contained HTML files with inline SVG graphics and CSS styling.
+
+## How this skill should behave in Codex
+
+1. Understand the user's architecture description (components, boundaries, protocols, flows).
+2. Create **one self-contained `.html` file** using `assets/template.html` as the base.
+3. Save the file in the current working directory (unless the user asks for a specific path).
+4. If the user requests updates, edit the same HTML file in place.
+5. Keep output deterministic, production-friendly, and readable.
 
 ## Design System
 
@@ -29,7 +37,7 @@ Use these semantic colors for component types:
 
 ### Typography
 
-Use JetBrains Mono for all text (monospace, technical aesthetic):
+Use JetBrains Mono for all text (monospace technical aesthetic):
 ```html
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 ```
@@ -45,7 +53,7 @@ Font sizes: 12px for component names, 9px for sublabels, 8px for annotations, 7p
 </pattern>
 ```
 
-**Component boxes:** Rounded rectangles (`rx="6"`) with 1.5px stroke, semi-transparent fills.
+**Component boxes:** Rounded rectangles (`rx="6"`) with 1.5px stroke and semi-transparent fills.
 
 **Security groups:** Dashed stroke (`stroke-dasharray="4,4"`), transparent fill, rose color.
 
@@ -58,9 +66,9 @@ Font sizes: 12px for component names, 9px for sublabels, 8px for annotations, 7p
 </marker>
 ```
 
-**Arrow z-order:** Draw connection arrows early in the SVG (after the background grid) so they render behind component boxes. SVG elements are painted in document order, so arrows drawn first will appear behind shapes drawn later.
+**Arrow z-order:** Draw connection arrows early in the SVG (after the background grid) so they render behind component boxes.
 
-**Masking arrows behind transparent fills:** Since component boxes use semi-transparent fills (`rgba(..., 0.4)`), arrows behind them will show through. To fully mask arrows, draw an opaque background rect (e.g., `fill="#0f172a"`) at the same position before drawing the semi-transparent styled rect on top:
+**Masking arrows behind transparent fills:** Since component boxes use semi-transparent fills (`rgba(..., 0.4)`), draw an opaque background rect first:
 ```svg
 <!-- Opaque background to mask arrows -->
 <rect x="X" y="Y" width="W" height="H" rx="6" fill="#0f172a"/>
@@ -70,7 +78,7 @@ Font sizes: 12px for component names, 9px for sublabels, 8px for annotations, 7p
 
 **Auth/security flows:** Dashed lines in rose color (`#fb7185`).
 
-**Message buses / Event buses:** Small connector elements between services. Use orange color (`#fb923c` stroke, `rgba(251, 146, 60, 0.3)` fill):
+**Message buses / Event buses:** Small connector elements between services:
 ```svg
 <rect x="X" y="Y" width="120" height="20" rx="4" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
 <text x="CENTER_X" y="Y+14" fill="#fb923c" font-size="7" text-anchor="middle">Kafka / RabbitMQ</text>
@@ -78,86 +86,43 @@ Font sizes: 12px for component names, 9px for sublabels, 8px for annotations, 7p
 
 ### Spacing Rules
 
-**CRITICAL:** When stacking components vertically, ensure proper spacing to avoid overlaps:
+**CRITICAL:** When stacking components vertically, ensure proper spacing to avoid overlaps.
 
-- **Standard component height:** 60px for services, 80-120px for larger components
-- **Minimum vertical gap between components:** 40px
-- **Inline connectors (message buses):** Place IN the gap between components, not overlapping
-
-**Example vertical layout:**
-```
-Component A: y=70,  height=60  → ends at y=130
-Gap:         y=130 to y=170   → 40px gap, place bus at y=140 (20px tall)
-Component B: y=170, height=60  → ends at y=230
-```
-
-**Wrong:** Placing a message bus at y=160 when Component B starts at y=170 (causes overlap)
-**Right:** Placing a message bus at y=140, centered in the 40px gap (y=130 to y=170)
+- Standard component height: 60px for services, 80-120px for larger components
+- Minimum vertical gap between components: 40px
+- Inline connectors (message buses): place inside the gap, not overlapping component boxes
 
 ### Legend Placement
 
-**CRITICAL:** Place legends OUTSIDE all boundary boxes (region boundaries, cluster boundaries, security groups).
+**CRITICAL:** Place legends outside all boundary boxes.
 
-- Calculate where all boundaries end (y position + height)
+- Compute where all boundaries end (`y + height`)
 - Place legend at least 20px below the lowest boundary
-- Expand SVG viewBox height if needed to accommodate
-
-**Example:**
-```
-Kubernetes Cluster: y=30, height=460 → ends at y=490
-Legend should start at: y=510 or below
-SVG viewBox height: at least 560 to fit legend
-```
-
-**Wrong:** Legend at y=470 inside a cluster boundary that ends at y=490
-**Right:** Legend at y=510, below the cluster boundary, with viewBox height extended
+- Expand SVG `viewBox` height if needed
 
 ### Layout Structure
 
-1. **Header** - Title with pulsing dot indicator, subtitle
-2. **Main SVG diagram** - Contained in rounded border card
-3. **Summary cards** - Grid of 3 cards below diagram with key details
-4. **Footer** - Minimal metadata line
+1. Header (title and subtitle)
+2. Main SVG diagram in a rounded border card
+3. Summary cards (3 cards below diagram)
+4. Footer metadata line
 
-### Component Box Pattern
+## Template Usage
 
-```svg
-<rect x="X" y="Y" width="W" height="H" rx="6" fill="FILL_COLOR" stroke="STROKE_COLOR" stroke-width="1.5"/>
-<text x="CENTER_X" y="Y+20" fill="white" font-size="11" font-weight="600" text-anchor="middle">LABEL</text>
-<text x="CENTER_X" y="Y+36" fill="#94a3b8" font-size="9" text-anchor="middle">sublabel</text>
-```
+Start from `assets/template.html` and customize:
 
-### Info Card Pattern
-
-```html
-<div class="card">
-  <div class="card-header">
-    <div class="card-dot COLOR"></div>
-    <h3>Title</h3>
-  </div>
-  <ul>
-    <li>• Item one</li>
-    <li>• Item two</li>
-  </ul>
-</div>
-```
-
-## Template
-
-Copy and customize the template at `assets/template.html`. Key customization points:
-
-1. Update the `<title>` and header text
-2. Modify SVG viewBox dimensions if needed (default: `1000 x 680`)
-3. Add/remove/reposition component boxes
-4. Draw connection arrows between components
-5. Update the three summary cards
+1. Update document title and header text
+2. Adjust SVG `viewBox` dimensions when needed
+3. Add/reposition components and boundaries
+4. Draw connection arrows and labels
+5. Update three summary cards
 6. Update footer metadata
 
-## Output
+## Output Contract
 
-Always produce a single self-contained `.html` file with:
-- Embedded CSS (no external stylesheets except Google Fonts)
-- Inline SVG (no external images)
-- No JavaScript required (pure CSS animations)
+Always output a single `.html` artifact that is:
 
-The file should render correctly when opened directly in any modern browser.
+- Fully self-contained (embedded CSS + inline SVG)
+- Browser-openable without build steps
+- Free of JavaScript unless explicitly requested
+- Easy to edit for iterative follow-up requests
